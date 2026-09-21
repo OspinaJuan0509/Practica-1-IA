@@ -246,11 +246,8 @@ class SistemaExpertoResiduos(KnowledgeEngine):
         print(f"[Gestión] Resultado Difuso Bajo para Residuo {i} -> Acción: GestionProgramada.")
         self.declare(AccionGestion(id_residuo=i, accion="GestionProgramada"))
 
-    # =====================================================================
+ 
     # SECCIÓN 5: REGLAS DE ASIGNACIÓN DE CENTRO DE GESTIÓN (Salience 10)
-    # Enlaza el tratamiento determinado con la entidad semántica CentroGestion
-    # =====================================================================
-
     @Rule(
         Tratamiento(id_residuo=MATCH.i, tipo_tratamiento="Reciclaje"),
         NOT(CentroGestion(id_residuo=MATCH.i)),
