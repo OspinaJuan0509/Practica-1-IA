@@ -6,7 +6,7 @@ if not hasattr(collections, 'Mapping'):
 
 from experta import (
     Fact, KnowledgeEngine, Rule, DefFacts, 
-    AND, OR, NOT, Field, AS
+    AND, OR, NOT, Field, AS, MATCH, TEST
 )
 
 # Definición de las Clases de Hechos 
