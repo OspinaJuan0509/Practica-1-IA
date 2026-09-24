@@ -11,22 +11,64 @@ porcentaje_acumulacion = ctrl.Antecedent(np.arange(0, 101), 'porcentaje_acumulac
 # Definición variable de salida. Método de defuzzificación usado: centroide (por defecto)
 nivel_prioridad = ctrl.Consequent(np.arange(0, 101), 'nivel_prioridad')
 
-# Funciones de pertenencia (trapezoidal, triangular y gaussiana)
-cantidad_residuo['baja'] = fuzz.trapmf(cantidad_residuo.universe, [0, 0, 15, 40])
-cantidad_residuo['media'] = fuzz.trimf(cantidad_residuo.universe, [30, 50, 70])
+# Modificador 'muy'
+def modificar_muy(conjunto):
+    return conjunto ** 2
+
+def modificar_ligeramente(conjunto):
+    return conjunto ** 1.3
+
+""" 
+Funciones de pertenencia para la variable de entrada cantidad_residuo:
+    Triangular para el valor difuso 'baja' en el intervalo [0, 40]
+    Trapezoidal para el valor difuso 'media' en el intervalo [30, 70]
+    Gaussiana para el valor difuso 'alta' con punto máximo 100 y desviacón estándar 12.5
+"""
+cantidad_residuo['baja'] = fuzz.trimf(cantidad_residuo.universe, [0, 0, 40])
+cantidad_residuo['media'] = fuzz.trapmf(cantidad_residuo.universe, [30, 40, 60, 70])
 cantidad_residuo['alta'] = fuzz.gaussmf(cantidad_residuo.universe, 100, 12.5)
 
-nivel_contaminacion['bajo'] = fuzz.trapmf(cantidad_residuo.universe, [0, 0, 15, 40])
-nivel_contaminacion['medio'] = fuzz.trimf(cantidad_residuo.universe, [30, 50, 70])
-nivel_contaminacion['alto'] = fuzz.gaussmf(cantidad_residuo.universe, 100, 12.5)
+# Agregar valor difuso 'ligeramente_baja' como concentración del valor difuso 'baja'
+cantidad_residuo['ligeramente_baja'] = modificar_ligeramente(fuzz.trimf(cantidad_residuo.universe, [0, 0, 40]))
 
-porcentaje_acumulacion['bajo'] = fuzz.trapmf(cantidad_residuo.universe, [0, 0, 15, 40])
-porcentaje_acumulacion['medio'] = fuzz.trimf(cantidad_residuo.universe, [30, 50, 70])
-porcentaje_acumulacion['alto'] = fuzz.gaussmf(cantidad_residuo.universe, 100, 12.5)
+""" 
+Funciones de pertenencia para la variable de entrada nivel_contaminacion:
+    Trapezoidal para el valor difuso 'bajo' en el intervalo [0, 40]
+    Gaussiana para el valor difuso 'medio' con punto máximo 50 y desviacón estándar 14
+    Triangular para el valor difuso 'alto' en el intervalo [70, 100]
+"""
+nivel_contaminacion['bajo'] = fuzz.trapmf(nivel_contaminacion.universe, [0, 0, 15, 40])
+nivel_contaminacion['medio'] = fuzz.gaussmf(nivel_contaminacion.universe, 50, 14)
+nivel_contaminacion['alto'] = fuzz.trimf(nivel_contaminacion.universe, [70, 100, 100])
 
-nivel_prioridad['bajo'] = fuzz.trapmf(cantidad_residuo.universe, [0, 0, 15, 40])
-nivel_prioridad['medio'] = fuzz.trimf(cantidad_residuo.universe, [30, 50, 70])
-nivel_prioridad['alto'] = fuzz.gaussmf(cantidad_residuo.universe, 100, 12.5)
+# Agregar valor difuso 'muy_bajo' como concentración del valor difuso 'bajo'
+nivel_contaminacion['muy_bajo'] = modificar_muy(fuzz.trapmf(nivel_contaminacion.universe, [0, 0, 15, 40]))
+
+""" 
+Funciones de pertenencia para la variable de entrada porcentaje_acumulacion:
+    Trapezoidal para el valor difuso 'bajo' en el intervalo [0, 30]
+    Triangular para el valor difuso 'medio' en el intervalo [25, 75]
+    Gaussiana para el valor difuso 'alto' con punto máximo 100 y desviacón estándar 13
+"""
+porcentaje_acumulacion['bajo'] = fuzz.trapmf(porcentaje_acumulacion.universe, [0, 0, 10, 30])
+porcentaje_acumulacion['medio'] = fuzz.trimf(porcentaje_acumulacion.universe, [25, 45, 75])
+porcentaje_acumulacion['alto'] = fuzz.gaussmf(porcentaje_acumulacion.universe, 100, 13)
+
+# Agregar valor difuso 'muy_alto' como concentración del valor difuso 'alto'
+porcentaje_acumulacion['muy_alto'] = modificar_muy(fuzz.gaussmf(porcentaje_acumulacion.universe, 100, 13))
+
+""" 
+Funciones de pertenencia para la variable de salida nivel_prioridad:
+    Triangular para el valor difuso 'bajo' en el intervalo [0, 35]
+    Gaussiana para el valor difuso 'medio' con punto máximo 50 y desviacón estándar 11
+    Trapezoidal para el valor difuso 'alto' para el intervalo [65, 100]
+"""
+nivel_prioridad['bajo'] = fuzz.trimf(nivel_prioridad.universe, [0, 0, 35])
+nivel_prioridad['medio'] = fuzz.gaussmf(nivel_prioridad.universe, 50, 11)
+nivel_prioridad['alto'] = fuzz.trapmf(nivel_prioridad.universe, [65, 80, 100, 100])
+
+# Agregar valor difuso 'ligeramente_alto' como concentración del valor difuso 'alto'
+nivel_prioridad['ligeramente_alto'] = modificar_ligeramente(fuzz.trapmf(nivel_prioridad.universe, [65, 80, 100, 100]))
 
 # Definición de reglas 
 rule1 = ctrl.Rule(cantidad_residuo['alta'] & nivel_contaminacion['alto'], nivel_prioridad['alto'])
@@ -45,9 +87,11 @@ rule10 = ctrl.Rule(~ nivel_contaminacion['alto'] & cantidad_residuo['baja'], niv
 rule11 = ctrl.Rule(cantidad_residuo['alta'] & nivel_contaminacion['medio'], nivel_prioridad['alto'])
 rule12 = ctrl.Rule(~ cantidad_residuo['alta'] & nivel_contaminacion['bajo'], nivel_prioridad['bajo'])
 
-# 
+# Creación de sistema de control
 sistema_control = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, 
                                     rule7, rule8, rule9, rule10, rule11, rule12])
+
+# Instanciación para simular y probar el sistema de lógica difusa
 calculador_prioridad = ctrl.ControlSystemSimulation(sistema_control)
 
 calculador_prioridad.input['cantidad_residuo'] = 30
